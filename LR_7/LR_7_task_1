@@ -1,0 +1,74 @@
+from sklearn.metrics import silhouette_score
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+
+# Завантаження вхідних даних
+X = np.loadtxt('data_clustering.txt', delimiter=',')
+
+# Виведення інформації
+print(f"Форма даних: {X.shape}")
+print(f"Перші 5 точок:\n{X[:5]}")
+
+# Візуалізація вхідних даних
+plt.figure(figsize=(10, 8))
+plt.scatter(X[:, 0], X[:, 1], c='blue', edgecolors='black', s=40, alpha=0.7)
+plt.title("Вхідні дані до кластеризації", fontsize=14)
+plt.xlabel("Ознака 1", fontsize=12)
+plt.ylabel("Ознака 2", fontsize=12)
+plt.grid(True, alpha=0.3)
+plt.show()
+
+# Навчання моделі KMeans
+kmeans = KMeans(init='k-means++', n_clusters=5, n_init=10, random_state=42)
+kmeans.fit(X)
+
+# Виведення інформації про результати
+print(f"\nЦентри кластерів:\n{kmeans.cluster_centers_}")
+print(f"Інерція: {kmeans.inertia_:.2f}")
+
+# Створення сітки
+step_size = 0.01
+x_min, x_max = X[:, 0].min()-1, X[:, 0].max()+1
+y_min, y_max = X[:, 1].min()-1, X[:, 1].max()+1
+xx, yy = np.meshgrid(np.arange(x_min, x_max, step_size),
+                     np.arange(y_min, y_max, step_size))
+
+# Передбачення міток для сітки
+Z = kmeans.predict(np.c_[xx.ravel(), yy.ravel()])
+Z = Z.reshape(xx.shape)
+
+# Фінальна візуалізація
+plt.figure(figsize=(12, 10))
+
+# Відображення областей кластерів
+plt.imshow(Z, interpolation='nearest',
+           extent=(xx.min(), xx.max(), yy.min(), yy.max()),
+           cmap=plt.cm.Paired, origin='lower', alpha=0.4)
+
+# Відображення точок даних з кольорами за кластерамив
+plt.scatter(X[:, 0], X[:, 1], c=kmeans.labels_, edgecolors='black',
+            cmap=plt.cm.Paired, s=40)
+
+# Відображення центрів кластерів
+centers = kmeans.cluster_centers_
+plt.scatter(centers[:, 0], centers[:, 1], s=200, c='red',
+            marker='X', edgecolors='black', linewidth=2,
+            label='Центри кластерів')
+
+# Додавання підписів до центрів
+for i, center in enumerate(centers):
+    plt.annotate(f'Кластер {i}',
+                 xy=(center[0], center[1]),
+                 xytext=(10, 10),
+                 textcoords='offset points',
+                 fontsize=10, fontweight='bold')
+
+plt.title("Кластеризація даних методом k-середніх (k-means)", fontsize=14)
+plt.xlabel("Ознака 1", fontsize=12)
+plt.ylabel("Ознака 2", fontsize=12)
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.show()

@@ -1,0 +1,41 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import MeanShift, estimate_bandwidth
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+
+# Завантаження вхідних даних з файлу
+X = np.loadtxt('data_clustering.txt', delimiter=',')
+
+# Оцінка ширини вікна
+bandwidth = estimate_bandwidth(X, quantile=0.1)
+
+# Створення та навчання моделі Mean Shift
+model = MeanShift(bandwidth=bandwidth)
+model.fit(X)
+
+# Отримання результатів кластеризації
+labels = model.labels_
+centers = model.cluster_centers_
+
+# Візуалізація результатів
+plt.figure(figsize=(10, 8))
+
+# Відображення точок кожного кластера різним кольором
+for i in range(len(centers)):
+    plt.scatter(X[labels == i][:, 0], X[labels == i]
+                [:, 1], label=f'Кластер {i}')
+
+# Відображення центрів кластерів
+plt.scatter(centers[:, 0], centers[:, 1], c='black',
+            s=200, marker='X', label='Центри')
+
+plt.title("Кластеризація методом зсуву середнього (Mean Shift)")
+plt.xlabel("Ознака 1")
+plt.ylabel("Ознака 2")
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.show()
+
+# Виведення кількості знайдених кластерів
+print("Кількість кластерів:", len(centers))

@@ -1,0 +1,98 @@
+import json
+import numpy as np
+import yfinance as yf
+from sklearn import covariance, cluster
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+
+# Завантаження файлу
+input_file = 'company_symbol_mapping.json'
+
+with open(input_file, 'r', encoding='utf-8') as f:
+    company_symbols_map = json.load(f)
+
+# Отримання списків символів і назв компаній
+symbols = list(company_symbols_map.keys())
+names = list(company_symbols_map.values())
+
+# Визначення періоду часу для завантаження даних
+start_date = "2003-07-03"
+end_date = "2007-05-04"
+
+# Списки для збереження даних
+data_list = []
+valid_names = []
+valid_symbols = []
+
+# Завантаження біржових даних для кожної компанії
+for symbol, name in zip(symbols, names):
+    try:
+        data = yf.download(symbol, start=start_date,
+                           end=end_date, progress=False)
+
+        # Пропускаємо компанії без даних
+        if data.empty:
+            continue
+
+        # Отримання значень відкриття та закриття
+        open_vals = np.array(data['Open']).flatten()
+        close_vals = np.array(data['Close']).flatten()
+
+        if len(open_vals) < 10:
+            continue
+
+        # Обчислення різниці між ціною закриття та відкриття
+        diff = close_vals - open_vals
+
+        # Додаємо дані до списку
+        data_list.append(diff)
+        valid_names.append(name)
+        valid_symbols.append(symbol)
+
+    except Exception:
+        continue
+
+# Перевірка, чи є дані
+if len(data_list) < 2:
+    print("Помилка: Недостатньо даних для кластеризації")
+    exit()
+
+# Вирівнювання довжини всіх масивів
+min_len = min(len(d) for d in data_list)
+data_list = [d[:min_len] for d in data_list]
+
+# Формування двовимірного масиву
+X = np.array(data_list)
+
+# Транспонування для отримання формату
+X = X.T
+
+# Замінюємо NaN значення на 0
+X = np.nan_to_num(X)
+
+# Нормалізація даних
+std = X.std(axis=0)
+std[std == 0] = 1
+X = X / std
+
+# Виведення форми масиву для перевірки
+print("Форма X:", X.shape)
+print("Кількість компаній:", len(valid_names))
+
+# Побудова графової моделі
+edge_model = covariance.GraphicalLassoCV()
+edge_model.fit(X)
+
+# Виконання кластеризації методом поширення подібності
+_, labels = cluster.affinity_propagation(edge_model.covariance_)
+
+# Визначення кількості кластерів
+num_clusters = len(np.unique(labels))
+print("Кількість кластерів:", num_clusters)
+
+for i in range(num_clusters):
+    cluster_names = np.array(valid_names)[labels == i]
+    print(f"\nКластер {i + 1} (компаній: {len(cluster_names)})")
+    print("-"*30)
+    for name in cluster_names:
+        print(f"  - {name}")
