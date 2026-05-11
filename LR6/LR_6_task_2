@@ -1,0 +1,27 @@
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+
+P_yes = 9/14
+P_no = 5/14
+
+# Дощ
+P_rain_yes = 2/9
+P_rain_no = 2/5
+
+# Вологість
+P_high_yes = 3/9
+P_high_no = 4/5
+
+# Вітер
+P_weak_yes = 6/9
+P_weak_no = 2/5
+
+# Ймовірність позитивної відповіді
+p_yes = P_rain_yes * P_high_yes * P_weak_yes * P_yes
+# Ймовірність негативної відповіді
+p_no = P_rain_no * P_high_no * P_weak_no * P_no
+# Сума
+sum = p_yes + p_no
+
+print("P(Yes):", p_yes/sum)
+print("P(No):", p_no/sum)
