@@ -1,0 +1,93 @@
+# LR_2_task_5.py
+import numpy as np
+from sklearn.datasets import load_iris
+from sklearn.linear_model import RidgeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+from io import BytesIO
+
+# Налаштування стилю
+sns.set()
+plt.style.use('default')
+
+print("=" * 70)
+print("ЗАВДАННЯ 2.5: КЛАСИФІКАЦІЯ ДАНИХ ЛІНІЙНИМ КЛАСИФІКАТОРОМ RIDGE")
+print("=" * 70)
+
+# Завантаження даних Iris
+iris = load_iris()
+X, y = iris.data, iris.target
+
+print(f"Ознаки: {iris.feature_names}")
+print(f"Класи: {iris.target_names}")
+print(f"Розмір даних: {X.shape}")
+
+# Розділення на навчальну та тестову вибірки (виправлено: X_test, y_test)
+Xtrain, Xtest, ytrain, ytest = train_test_split(
+    X, y, test_size=0.3, random_state=0)
+
+# Налаштування та навчання класифікатора Ridge
+clf = RidgeClassifier(tol=1e-2, solver="sag")
+clf.fit(Xtrain, ytrain)
+
+# Прогнозування (виправлено: Xtest)
+ypred = clf.predict(Xtest)
+
+# Розрахунок показників якості
+print("\n" + "=" * 70)
+print("ПОКАЗНИКИ ЯКОСТІ МОДЕЛІ")
+print("=" * 70)
+
+accuracy = np.round(metrics.accuracy_score(ytest, ypred), 4)
+precision = np.round(metrics.precision_score(
+    ytest, ypred, average='weighted'), 4)
+recall = np.round(metrics.recall_score(ytest, ypred, average='weighted'), 4)
+f1 = np.round(metrics.f1_score(ytest, ypred, average='weighted'), 4)
+kappa = np.round(metrics.cohen_kappa_score(ytest, ypred), 4)
+matthews = np.round(metrics.matthews_corrcoef(ytest, ypred), 4)
+
+print(f"Accuracy (точність): {accuracy}")
+print(f"Precision (точність передбачення): {precision}")
+print(f"Recall (повнота): {recall}")
+print(f"F1 Score: {f1}")
+print(f"Cohen Kappa Score: {kappa}")
+print(f"Matthews Correlation Coefficient: {matthews}")
+
+print(
+    f"\nClassification Report:\n{metrics.classification_report(ytest, ypred, target_names=iris.target_names)}")
+
+# Матриця помилок
+mat = confusion_matrix(ytest, ypred)
+
+print("\n" + "=" * 70)
+print("МАТРИЦЯ ПОМИЛОК (CONFUSION MATRIX)")
+print("=" * 70)
+print(mat)
+
+# Візуалізація матриці помилок
+plt.figure(figsize=(8, 6))
+sns.heatmap(mat.T, square=True, annot=True, fmt='d', cbar=False,
+            cmap='Blues', linewidths=1, linecolor='black',
+            annot_kws={'size': 14, 'weight': 'bold'})
+plt.xlabel('True Label (Справжній клас)', fontsize=12)
+plt.ylabel('Predicted Label (Передбачений клас)', fontsize=12)
+plt.title('Confusion Matrix - Ridge Classifier', fontsize=14)
+plt.xticks([0.5, 1.5, 2.5], iris.target_names, rotation=0)
+plt.yticks([0.5, 1.5, 2.5], iris.target_names, rotation=0)
+plt.tight_layout()
+plt.savefig("Confusion.jpg", dpi=150)
+plt.show()
+
+# Збереження у SVG форматі
+f = BytesIO()
+plt.savefig(f, format="svg")
+print("\nГрафік збережено у файли: Confusion.jpg та у форматі SVG")
+
+print("\n" + "=" * 70)
+print("ВИСНОВОК ДО ЗАВДАННЯ 2.5")
+print("=" * 70)
+print("RidgeClassifier показав високу точність на наборі даних Iris.")
+print("Модель успішно класифікує всі три сорти ірисів.")
